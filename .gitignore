@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+
+# Data & outputs (never commit real or large data)
+data/
+*.nii
+*.nii.gz
+*.dcm
+examples/outputs/
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/
