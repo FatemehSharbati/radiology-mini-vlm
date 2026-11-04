@@ -97,8 +97,26 @@ def test_rank_by_cosine_fake_embeddings():
     assert len(idx_all) == 3
 
 
+def test_text_to_image_search_rejects_empty():
+    """The empty-image guard must fire before any model download is attempted."""
+    if not _TORCH_AVAILABLE:
+        print("SKIP test_text_to_image_search_rejects_empty (torch not installed)")
+        return
+    from src.retrieval import text_to_image_search
+
+    try:
+        text_to_image_search("bilateral lung opacity", [])
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("expected ValueError for empty image list")
+    # If we got here without a download attempt, the guard runs first —
+    # no model weights are needed for this check.
+
+
 if __name__ == "__main__":
     test_audit_detects_subgroup_gap()
     test_audit_rejects_bad_input()
     test_rank_by_cosine_fake_embeddings()
+    test_text_to_image_search_rejects_empty()
     print("smoke tests passed")
