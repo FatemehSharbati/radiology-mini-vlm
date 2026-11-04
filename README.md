@@ -45,6 +45,15 @@ print(list(zip(idx, scores)))
 EOF
 ```
 
+## Retrieval model
+
+The text↔image search uses the general-domain CLIP checkpoint `ViT-B-32` with
+pretrained weights `laion2b_s34b_b79k` (see `MODEL_NAME` and `PRETRAINED` in
+`src/retrieval.py`). The weights are downloaded from the internet on first use
+and cached by `open_clip` afterwards; the model runs on CPU unless CUDA is
+available. Swapping in a medical-domain checkpoint (e.g. MedCLIP) is the
+natural next experiment — it only requires changing these two constants.
+
 ## Fairness audit
 
 `src/fairness_audit.py` implements the audit:
