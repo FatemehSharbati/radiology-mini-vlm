@@ -96,6 +96,34 @@ def test_rank_by_cosine_fake_embeddings():
     idx_all, _ = rank_by_cosine(query, images, top_k=99)
     assert len(idx_all) == 3
 
+    # a 1-D query vector works the same as a (1, D) row
+    idx_1d, scores_1d = rank_by_cosine(torch.tensor([1.0, 0.0, 0.0]), images, top_k=2)
+    assert idx_1d == idx and scores_1d == scores
+
+
+def test_rank_by_cosine_rejects_bad_input():
+    if not _TORCH_AVAILABLE:
+        print("SKIP test_rank_by_cosine_rejects_bad_input (torch not installed)")
+        return
+    query = torch.tensor([[1.0, 0.0, 0.0]])
+    images = torch.tensor([[0.0, 1.0, 0.0], [1.0, 0.0, 0.0]])
+    bad_inputs = [
+        (query, torch.empty(0, 3)),  # no images to rank
+        (torch.tensor([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]), images),  # two queries
+        (torch.tensor([[1.0, 0.0]]), images),  # dimension mismatch
+        (torch.empty(0), images),  # empty query
+    ]
+    for bad_query, bad_images in bad_inputs:
+        try:
+            rank_by_cosine(bad_query, bad_images)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(
+                f"expected ValueError for query {tuple(bad_query.shape)} "
+                f"vs images {tuple(bad_images.shape)}"
+            )
+
 
 def test_text_to_image_search_rejects_empty():
     """The empty-image guard must fire before any model download is attempted."""
@@ -118,5 +146,6 @@ if __name__ == "__main__":
     test_audit_detects_subgroup_gap()
     test_audit_rejects_bad_input()
     test_rank_by_cosine_fake_embeddings()
+    test_rank_by_cosine_rejects_bad_input()
     test_text_to_image_search_rejects_empty()
     print("smoke tests passed")

@@ -77,8 +77,34 @@ def rank_by_cosine(
 
     Pure tensor math — no model weights needed, so it is unit-testable.
     Returns (ranked_indices, cosine_scores), best match first.
+
+    Expects L2-normalized embeddings (as produced by :func:`embed_images`
+    and :func:`embed_texts`); the query must be a single vector of shape
+    ``(D,)`` or ``(1, D)`` and ``image_embs`` a non-empty ``(N, D)`` tensor
+    with the same ``D``. Anything else raises :class:`ValueError` instead
+    of failing inside ``topk`` or silently returning wrong-shaped results.
     """
-    sims = (image_embs @ query_emb.T).squeeze(-1)
+    query = query_emb.reshape(-1) if query_emb.dim() == 2 else query_emb
+    if query_emb.dim() not in (1, 2) or query.numel() == 0:
+        raise ValueError(
+            f"query_emb must be a single vector of shape (D,) or (1, D), "
+            f"got shape {tuple(query_emb.shape)}"
+        )
+    if query_emb.dim() == 2 and query_emb.shape[0] != 1:
+        raise ValueError(
+            f"query_emb must be a single vector, got {query_emb.shape[0]} rows"
+        )
+    if image_embs.dim() != 2 or image_embs.shape[0] == 0:
+        raise ValueError(
+            f"image_embs must be a non-empty 2-D tensor of shape (N, D), "
+            f"got shape {tuple(image_embs.shape)}"
+        )
+    if image_embs.shape[1] != query.shape[0]:
+        raise ValueError(
+            f"embedding dimension mismatch: query has {query.shape[0]}, "
+            f"images have {image_embs.shape[1]}"
+        )
+    sims = image_embs @ query
     k = max(1, min(top_k, sims.numel()))
     scores, idx = torch.topk(sims, k)
     return idx.cpu().tolist(), scores.cpu().tolist()
