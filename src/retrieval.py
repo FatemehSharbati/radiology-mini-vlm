@@ -83,7 +83,11 @@ def rank_by_cosine(
     ``(D,)`` or ``(1, D)`` and ``image_embs`` a non-empty ``(N, D)`` tensor
     with the same ``D``. Anything else raises :class:`ValueError` instead
     of failing inside ``topk`` or silently returning wrong-shaped results.
+    ``top_k`` must be at least 1 — asking for zero or fewer results is a
+    caller error, not a request for one result.
     """
+    if top_k < 1:
+        raise ValueError(f"top_k must be at least 1, got {top_k}")
     query = query_emb.reshape(-1) if query_emb.dim() == 2 else query_emb
     if query_emb.dim() not in (1, 2) or query.numel() == 0:
         raise ValueError(
@@ -105,7 +109,7 @@ def rank_by_cosine(
             f"images have {image_embs.shape[1]}"
         )
     sims = image_embs @ query
-    k = max(1, min(top_k, sims.numel()))
+    k = min(top_k, sims.numel())
     scores, idx = torch.topk(sims, k)
     return idx.cpu().tolist(), scores.cpu().tolist()
 

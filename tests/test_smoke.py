@@ -124,6 +124,15 @@ def test_rank_by_cosine_rejects_bad_input():
                 f"vs images {tuple(bad_images.shape)}"
             )
 
+    # top_k below 1 is a caller error, not a request for one result
+    for bad_top_k in (0, -3):
+        try:
+            rank_by_cosine(query, images, top_k=bad_top_k)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(f"expected ValueError for top_k={bad_top_k}")
+
 
 def test_text_to_image_search_rejects_empty():
     """The empty-image guard must fire before any model download is attempted."""
