@@ -72,6 +72,23 @@ def test_audit_rejects_bad_input():
         else:
             raise AssertionError("expected ValueError for single-class subgroup")
 
+        # y_true of 0/2 would silently be treated as binary (2 = positive)
+        # by the AUROC computation — it must be rejected, not audited
+        non_binary = os.path.join(tmp, "nonbinary.csv")
+        pd.DataFrame(
+            {
+                "y_true": [0, 2, 0, 2],
+                "y_score": [0.1, 0.9, 0.2, 0.8],
+                "subgroup": ["A", "A", "A", "A"],
+            }
+        ).to_csv(non_binary, index=False)
+        try:
+            audit_csv(non_binary)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("expected ValueError for non-binary y_true")
+
 
 def test_rank_by_cosine_fake_embeddings():
     if not _TORCH_AVAILABLE:

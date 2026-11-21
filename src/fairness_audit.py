@@ -65,11 +65,18 @@ def audit_csv(path, n_boot=1000, plot_path=None):
     """Audit a CSV file; returns a DataFrame with per-subgroup AUROC + gaps.
 
     Columns: subgroup, n, auroc, ci_lo, ci_hi, gap_vs_best.
+    ``y_true`` must contain only 0/1 labels — any other value (e.g. 2) would
+    silently be treated as the positive class by the AUROC computation.
     """
     df = pd.read_csv(path)
     missing = REQUIRED_COLUMNS - set(df.columns)
     if missing:
         raise ValueError(f"CSV is missing required columns: {sorted(missing)}")
+    y_values = np.unique(df["y_true"].to_numpy())
+    if not np.isin(y_values, [0, 1]).all():
+        raise ValueError(
+            f"y_true must contain only 0/1 labels, got {y_values.tolist()}"
+        )
     rows = []
     for subgroup, group in df.groupby("subgroup"):
         if len(np.unique(group["y_true"].to_numpy())) < 2:
